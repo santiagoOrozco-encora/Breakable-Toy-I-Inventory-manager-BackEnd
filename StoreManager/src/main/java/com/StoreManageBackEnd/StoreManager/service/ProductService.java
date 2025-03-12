@@ -8,6 +8,8 @@ import com.StoreManageBackEnd.StoreManager.presentation.dto.MetricsDTO;
 import com.StoreManageBackEnd.StoreManager.presentation.dto.NewProductsDTO;
 import com.StoreManageBackEnd.StoreManager.presentation.dto.ProductsDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.support.MutableSortDefinition;
+import org.springframework.beans.support.PagedListHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -34,19 +36,29 @@ public class ProductService {
     }
 
     //Get all products service
-    public Page<ProductsDTO> getProducts(Integer page, Integer size,String name,String category,Integer stock){
-        Pageable pageable = PageRequest.of(page, size);
-
-        List<Product> productsList = this.productDao.selectAllProducts( page,size,name,category,stock);
+    public PagedListHolder<ProductsDTO> getProducts(Integer page, Integer size,String name,String category,Integer stock,String sort,Boolean order){
+        List<Product> productsList = this.productDao.selectAllProducts( page,size,name,category,stock,sort);
         List<ProductsDTO> dtoList = productsList.stream().map(ProductConverter::convertToDTO).toList();
-        long total = this.productDao.countProducts(name,category,stock);
+        MutableSortDefinition sorting =  new MutableSortDefinition("name",false,true);
 
-        return  new PageImpl<>(dtoList,pageable,total);
+        PagedListHolder productPage = new PagedListHolder(dtoList,sorting);
+        productPage.setPageSize(size);
+        productPage.setPage(page);
+
+        return  productPage;
+    }
+
+    public Integer updateProductById(UUID id,NewProductsDTO updatedProduct){
+        return this.productDao.updateProductById(id,updatedProduct);
+    }
+
+    public Integer resetStock(UUID id,boolean action){
+        return this.productDao.resetStock(id,action);
     }
 
     //Delete a product by id service
     public int deleteProduct(UUID id){
-        return productDao.deleteProductbyId(id);
+        return productDao.deleteProductById(id);
 
     }
 
