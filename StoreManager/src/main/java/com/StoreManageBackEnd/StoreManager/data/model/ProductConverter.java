@@ -5,22 +5,21 @@ import com.StoreManageBackEnd.StoreManager.presentation.dto.ProductsDTO;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Data
 public class ProductConverter {
 
     public static  Product convertFromDTO(NewProductsDTO newProduct){
-        Product product = new Product();
+        UUID id = UUID.randomUUID();
 
-        product.setName(newProduct.getName());
-        product.setCategory(newProduct.getCategory());
-        product.setUnitPrice(newProduct.getUnitPrice());
-        product.setStock(newProduct.getStock());
-        product.setExpirationDate(newProduct.getExpirationDate());
-        product.setCreationDate(LocalDate.now());
-        product.setUpdateDate(LocalDate.now());
+        if(newProduct.getExpirationDate() != null){
+            return new Product(id,newProduct.getName(), newProduct.getCategory(), newProduct.getUnitPrice(),newProduct.getExpirationDate(),newProduct.getStock(),LocalDate.now(),LocalDate.now());
+        }else{
+            return new Product(id,newProduct.getName(), newProduct.getCategory(), newProduct.getUnitPrice(),newProduct.getStock(),LocalDate.now(),LocalDate.now());
+        }
 
-        return product;
+
     }
 
     public static ProductsDTO convertToDTO(Product product){

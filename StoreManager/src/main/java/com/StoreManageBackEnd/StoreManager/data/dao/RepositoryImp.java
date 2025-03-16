@@ -4,6 +4,7 @@ import com.StoreManageBackEnd.StoreManager.data.model.MetricsProduct;
 import com.StoreManageBackEnd.StoreManager.data.model.Product;
 import com.StoreManageBackEnd.StoreManager.presentation.dto.MetricsDTO;
 import com.StoreManageBackEnd.StoreManager.presentation.dto.NewProductsDTO;
+import lombok.Setter;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -11,46 +12,64 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Repository
-public class FakeProductDataAccessService implements ProductDao{
+public class RepositoryImp implements ProductDao{
+     @Setter
      private static List<Product> DB = new ArrayList<>();
 
     @Override
-    public List<Product> selectAllProducts(Integer page, Integer size, String name, String category, Integer stock,String sort) {
+    public List<Product> selectAllProducts(Integer page, Integer size, String name, String[] category, Integer stock, String[] sort, boolean[] order) {
         String finalName = (name == null) ? "" : name.toLowerCase();
-        String finalCategory = (category == null) ? "" : category.toLowerCase();
+        String[] finalCategory = (category == null) ? new String[]{} : Arrays.stream(category).map(String::toLowerCase).toArray(String[]::new);
 
         List<Product> productList = new ArrayList<>(DB.stream()
-                .filter(product -> (finalName.isEmpty() || (product.getName() != null && product.getName().toLowerCase().contains(finalName))) &&
-                        (finalCategory.isEmpty() || (product.getCategory() != null && product.getCategory().toLowerCase().contains(finalCategory))))
+                .filter(product -> (finalName.isEmpty() || product.getName().toLowerCase().contains(finalName)) && (finalCategory.length == 0 || Arrays.stream(finalCategory).anyMatch(cat -> product.getCategory().toLowerCase().contains(cat))))
                 .filter(product -> (stock == null || stock == 3) || (stock == 1 && product.getStock() >= 1) || (stock == 2 && product.getStock() < 1))
                 .toList());
 
-        Comparator<Product> comparator = null;
-        switch (sort){
-            case "name":
-                comparator = Comparator.comparing(Product::getName,Comparator.nullsLast(Comparator.naturalOrder()));
-                break;
-            case  "stock":
-                comparator = Comparator.comparing(Product::getStock,Comparator.nullsLast(Comparator.naturalOrder()));
-                break;
-            case  "expirationDate":
-                comparator = Comparator.comparing( product -> product.getExpirationDate() != null ? product.getExpirationDate().toEpochDay() : Long.MAX_VALUE);
-                break;
-            case  "unitPrice":
-                comparator = Comparator.comparing(Product::getUnitPrice,Comparator.nullsLast(Comparator.naturalOrder()));
-                break;
-            case  "category":
-                comparator = Comparator.comparing(Product::getCategory,Comparator.nullsLast(Comparator.naturalOrder()));
-                break;
-            default:
-                break;
-        }
+        if(sort != null && sort.length > 0) {
+            Comparator<Product> comparator = null;
 
-        if(comparator != null){
+            for (int i=0; i<sort.length; i++ ) {
+                Comparator<Product> comparatorField = getProductComparator(sort[i],order[i]);
+                if (comparatorField != null) {
+                    if(comparator == null){
+                        comparator = comparatorField;
+                    }else {
+                        comparator = comparator.thenComparing(comparatorField);
+                    }
+                }
+            }
             productList.sort(comparator);
         }
 
         return productList;
+    }
+
+    private static Comparator<Product> getProductComparator(String sort,boolean desc) {
+        Comparator<Product> comparatorField = null;
+        switch (sort) {
+            case "name":
+                comparatorField = Comparator.comparing(Product::getName, Comparator.nullsLast(Comparator.naturalOrder()));
+                break;
+            case "stock":
+                comparatorField = Comparator.comparing(Product::getStock, Comparator.nullsLast(Comparator.naturalOrder()));
+                break;
+            case "expirationDate":
+                comparatorField = Comparator.comparing(product -> product.getExpirationDate() != null ? product.getExpirationDate().toEpochDay() : Long.MAX_VALUE);
+                break;
+            case "unitPrice":
+                comparatorField = Comparator.comparing(Product::getUnitPrice, Comparator.nullsLast(Comparator.naturalOrder()));
+                break;
+            case "category":
+                comparatorField = Comparator.comparing(Product::getCategory, Comparator.nullsLast(Comparator.naturalOrder()));
+                break;
+            default:
+                break;
+        }
+        if (desc && comparatorField != null){
+         comparatorField = comparatorField.reversed();
+        }
+        return comparatorField;
     }
 
     @Override
@@ -59,13 +78,11 @@ public class FakeProductDataAccessService implements ProductDao{
         String finalCategory = (category == null) ? "" : category.toLowerCase();
 
         List<Product> productList = DB.stream()
-                .filter(product -> (finalName.isEmpty() || (product.getName() != null && product.getName().toLowerCase().contains(finalName))) &&
-                        (finalCategory.isEmpty() || (product.getCategory() != null && product.getCategory().toLowerCase().contains(finalCategory))))
+                .filter(product -> (finalName.isEmpty() || product.getName().toLowerCase().contains(finalName)) && (finalCategory.isEmpty() || product.getCategory().toLowerCase().contains(finalCategory)))
                 .filter(product -> (stock == null || stock == 3) || (stock == 1 && product.getStock() >= 1) || (stock == 2 && product.getStock() < 1))
                 .toList();
         return productList.size();
     }
-
 
     @Override
     public int deleteProductById(UUID id) {
@@ -138,13 +155,6 @@ public class FakeProductDataAccessService implements ProductDao{
             );
         }).collect(Collectors.toList());
     }
-
-//    public List<MetricsDTO> getMetricsv2(){
-//        return DB.stream().forEach(
-//
-//        );
-//    }
-
 
     private MetricsProduct calculateMetrics(List<Product> products){
         double totalInStock = products.stream().mapToDouble(Product::getStock).sum();

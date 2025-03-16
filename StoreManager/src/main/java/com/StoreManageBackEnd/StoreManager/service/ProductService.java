@@ -10,10 +10,6 @@ import com.StoreManageBackEnd.StoreManager.presentation.dto.ProductsDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.support.MutableSortDefinition;
 import org.springframework.beans.support.PagedListHolder;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -36,22 +32,24 @@ public class ProductService {
     }
 
     //Get all products service
-    public PagedListHolder<ProductsDTO> getProducts(Integer page, Integer size,String name,String category,Integer stock,String sort,Boolean order){
-        List<Product> productsList = this.productDao.selectAllProducts( page,size,name,category,stock,sort);
+    public PagedListHolder<ProductsDTO> getProducts(Integer page, Integer size, String name, String[] category, Integer stock, String[] sort, boolean[] order){
+        List<Product> productsList = this.productDao.selectAllProducts( page,size,name,category,stock,sort,order);
         List<ProductsDTO> dtoList = productsList.stream().map(ProductConverter::convertToDTO).toList();
         MutableSortDefinition sorting =  new MutableSortDefinition("name",false,true);
 
-        PagedListHolder productPage = new PagedListHolder(dtoList,sorting);
+        PagedListHolder<ProductsDTO> productPage = new PagedListHolder<>(dtoList, sorting);
         productPage.setPageSize(size);
         productPage.setPage(page);
 
         return  productPage;
     }
 
+    //Update products using the ID
     public Integer updateProductById(UUID id,NewProductsDTO updatedProduct){
         return this.productDao.updateProductById(id,updatedProduct);
     }
 
+    //Set default stock of the product
     public Integer resetStock(UUID id,boolean action){
         return this.productDao.resetStock(id,action);
     }

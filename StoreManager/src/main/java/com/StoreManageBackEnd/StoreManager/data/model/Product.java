@@ -1,29 +1,32 @@
 package com.StoreManageBackEnd.StoreManager.data.model;
 
-import lombok.Data;
+import lombok.*;
+
 import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@RequiredArgsConstructor
 public class Product {
+    @NonNull
     private UUID id;
+    @NonNull
     private String name;
+    @NonNull
     private String category;
-    private float unitPrice;
+    @NonNull
+    private Float unitPrice;
+
     private LocalDate expirationDate;
-    private int stock;
+
+    @NonNull
+    private Integer stock;
+
+    @NonNull
     private LocalDate creationDate;
+    @NonNull
     private LocalDate updateDate;
 
-    //Constructor
-//    public Product(UUID id, String name, String category, float unitPrice, Date expirationDate, Integer stock) {
-//        this.id = id;
-//        this.name = name;
-//        this.category = category;
-//        this.unitPrice = unitPrice;
-//        this.expirationDate = expirationDate;
-//        this.stock = stock;
-//        this.creationDate = new Date();
-//        this.updateDate = new Date();
-//    }
 }

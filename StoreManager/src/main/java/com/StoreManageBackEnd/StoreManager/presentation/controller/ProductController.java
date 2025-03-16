@@ -6,7 +6,7 @@ import com.StoreManageBackEnd.StoreManager.presentation.dto.ProductsDTO;
 import com.StoreManageBackEnd.StoreManager.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.support.PagedListHolder;
-import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @RequestMapping("api/v1/product")
 @RestController
-@CrossOrigin(origins = "http://localhost:8080")
+//@CrossOrigin(origins = "http://localhost:8080")
 public class ProductController {
     private final ProductService productService;
 
@@ -27,8 +27,12 @@ public class ProductController {
 
     //Adding a new product
     @PostMapping("/addProduct")
-    public ResponseEntity addProduct(@RequestBody NewProductsDTO newProduct){
-        return ResponseEntity.ok(this.productService.addProduct(newProduct));
+    public HttpStatus addProduct(@RequestBody NewProductsDTO newProduct){
+        if(this.productService.addProduct(newProduct) == 1){
+        return HttpStatus.CREATED;
+        }else{
+            return  HttpStatus.BAD_REQUEST;
+        }
     }
 
     //Getting the list of products paginated, may be filtered
@@ -36,11 +40,11 @@ public class ProductController {
     public ResponseEntity<PagedListHolder<ProductsDTO>> getProducts(
             @RequestParam(defaultValue = "0")Integer page,
             @RequestParam(defaultValue = "10") Integer size,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) Integer stock,
-            @RequestParam(required = false, defaultValue = "") String sort,
-            @RequestParam(required = false,defaultValue = "false") boolean order
+            @RequestParam(required = false,defaultValue = "") String name,
+            @RequestParam(required = false,defaultValue = "") String[] category,
+            @RequestParam(required = false,defaultValue = "") Integer stock,
+            @RequestParam(required = false,defaultValue = "") String[] sort,
+            @RequestParam(required = false,defaultValue = "") boolean[] order
 
     ){
          PagedListHolder<ProductsDTO> productsPage = this.productService.getProducts(page,size,name,category,stock,sort,order);
