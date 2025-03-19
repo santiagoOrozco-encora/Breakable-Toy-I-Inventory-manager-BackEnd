@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-@RequestMapping("api/v1/product")
 @RestController
+@RequestMapping("api/v1/product")
 //@CrossOrigin(origins = "http://localhost:8080")
 public class ProductController {
     private final ProductService productService;
@@ -26,12 +26,13 @@ public class ProductController {
     }
 
     //Adding a new product
+
     @PostMapping("/addProduct")
-    public HttpStatus addProduct(@RequestBody NewProductsDTO newProduct){
+    public ResponseEntity addProduct(@RequestBody NewProductsDTO newProduct){
         if(this.productService.addProduct(newProduct) == 1){
-        return HttpStatus.CREATED;
+            return ResponseEntity.ok(1);
         }else{
-            return  HttpStatus.BAD_REQUEST;
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }
 
