@@ -36,6 +36,16 @@ public class ProductController {
         }
     }
 
+    @PostMapping("/addProducts")
+    public ResponseEntity addProducts(@RequestBody NewProductsDTO[] newProduct){
+        if(this.productService.addProducts(newProduct) == 1){
+            return ResponseEntity.ok(1);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+    }
+
+
     //Getting the list of products paginated, may be filtered
     @GetMapping
     public ResponseEntity<PagedListHolder<ProductsDTO>> getProducts(

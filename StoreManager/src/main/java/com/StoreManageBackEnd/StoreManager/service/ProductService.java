@@ -12,6 +12,8 @@ import org.springframework.beans.support.MutableSortDefinition;
 import org.springframework.beans.support.PagedListHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,6 +31,26 @@ public class ProductService {
     public int addProduct(NewProductsDTO newDto){
         Product product = ProductConverter.convertFromDTO(newDto);
         return productDao.insertProduct(product);
+    }
+
+    public int addProducts(NewProductsDTO[] newDto){
+        boolean insertedFlag = false;
+        for(NewProductsDTO dto : newDto){
+            Product product = ProductConverter.convertFromDTO(dto);
+
+            // Insert the Product into the database
+            int inserted = productDao.insertProduct(product);
+
+            // If the insertion was successful, increment the counter
+            if (inserted > 0) {
+                insertedFlag = true;
+            }
+        }
+        if(insertedFlag){
+            return 1;
+        }else {
+            return 0;
+        }
     }
 
     //Get all products service
