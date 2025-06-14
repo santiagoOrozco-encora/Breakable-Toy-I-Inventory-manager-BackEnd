@@ -35,7 +35,7 @@ public class ProductService {
     //Add a new product service
     @Transactional
     public int addProduct(NewProductsDTO newDto) {
-    // 1. Input validation
+    
     if (newDto == null) {
         log.warn("Attempted to add a null product");
         throw new IllegalArgumentException("Product data cannot be null");
@@ -44,15 +44,12 @@ public class ProductService {
     try {   
         log.debug("Attempting to add product: {}");
         
-        // 2. DTO to entity conversion
         Product product = ProductConverter.convertFromDTO(newDto);
         
-        // 3. Business validation (add more as needed)
         if (product.getName() == null || product.getName().trim().isEmpty()) {
             throw new IllegalArgumentException("Product name cannot be empty");
         }
         
-        // 4. Persist the product
         int result = productDao.insertProduct(product);
         
         if (result <= 0) {
@@ -110,16 +107,34 @@ public class ProductService {
     }
 
     //Get all products service
-    public PagedListHolder<ProductsDTO> getProducts(Integer page, Integer size, String name, String[] category, Integer stock, String[] sort, boolean[] order){
-        List<Product> productsList = this.productDao.selectAllProducts( page,size,name,category,stock,sort,order);
-        List<ProductsDTO> dtoList = productsList.stream().map(ProductConverter::convertToDTO).toList();
-        MutableSortDefinition sorting =  new MutableSortDefinition("name",false,true);
+    public PagedListHolder<ProductsDTO> getProducts(
+        int page, int size,
+        String name, String[] category,
+        int stock, String[] sort,
+        boolean[] order){
+            
+            try{
+            if(page < 0 || size < 0){
+                throw new IllegalArgumentException("Page and size must be non-negative");
+            }
 
-        PagedListHolder<ProductsDTO> productPage = new PagedListHolder<>(dtoList, sorting);
-        productPage.setPageSize(size);
-        productPage.setPage(page);
+            List<Product> productsList = this.productDao.selectAllProducts(
+                page,size,name,
+                category,stock,
+                sort,order);
+            
+            List<ProductsDTO> dtoList = productsList.stream().map(ProductConverter::convertToDTO).toList();
+            MutableSortDefinition sorting =  new MutableSortDefinition("name",false,true);
 
-        return  productPage;
+            PagedListHolder<ProductsDTO> productPage = new PagedListHolder<>(dtoList, sorting);
+            productPage.setPageSize(size);
+            productPage.setPage(page);
+
+            return  productPage;
+            }catch (Exception e){
+                log.error("Error getting products: {}");
+                throw new RuntimeException("Error getting products: " + e.getMessage());
+            }
     }
 
     //Update products using the ID

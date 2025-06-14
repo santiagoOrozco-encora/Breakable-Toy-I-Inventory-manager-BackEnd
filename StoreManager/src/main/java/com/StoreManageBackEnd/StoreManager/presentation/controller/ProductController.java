@@ -117,31 +117,31 @@ public class ProductController {
 
     //Update product with ID
     @PutMapping("/update")
-    public ResponseEntity updateProduct(@RequestParam(required = true)UUID id,@RequestBody NewProductsDTO updatedProduct){
+    public ResponseEntity<Integer> updateProduct(@RequestParam(required = true)UUID id,@RequestBody NewProductsDTO updatedProduct){
         return ResponseEntity.ok(this.productService.updateProductById(id,updatedProduct));
     }
 
     //Set out of stock
     @PostMapping("/products/{id}/outofstock")
-    public ResponseEntity outStock(@PathVariable("id") UUID id){
+    public ResponseEntity<Integer> outStock(@PathVariable("id") UUID id){
         return ResponseEntity.ok(this.productService.resetStock(id,true));
     }
 
     //Set default stock
     @PutMapping("/products/{id}/instock")
-    public ResponseEntity inStock(@PathVariable("id") UUID id){
+    public ResponseEntity<Integer> inStock(@PathVariable("id") UUID id){
         return ResponseEntity.ok(this.productService.resetStock(id,false));
     }
 
     @DeleteMapping()
-    public ResponseEntity deleteById(@RequestParam(required = true) UUID id){
+    public ResponseEntity<Integer> deleteById(@RequestParam(required = true) UUID id){
         return  ResponseEntity.ok(this.productService.deleteProduct(id));
     }
 
     //Metrics of the products
     @GetMapping("/metrics")
-    public List<MetricsDTO> productsMetrics(){
-        return this.productService.getMetrics();
+    public ResponseEntity<List<MetricsDTO>> productsMetrics(){
+        return ResponseEntity.ok(this.productService.getMetrics());
     }
 
 
