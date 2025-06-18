@@ -120,15 +120,6 @@ public class ProductService {
                 page,size,name,
                 category,stock,
                 sort,order);
-            
-            // List<ProductsDTO> dtoList = productsList.stream().map(ProductConverter::convertToDTO).toList();
-            // MutableSortDefinition sorting =  new MutableSortDefinition("name",false,true);
-
-            // PagedListHolder<ProductsDTO> productPage = new PagedListHolder<>(dtoList, sorting);
-            // productPage.setPageSize(size);
-            // productPage.setPage(page);
-
-            // return  productPage;
             }catch (Exception e){
                 log.error("Error getting products: {}");
                 throw new RuntimeException("Error getting products: " + e.getMessage());

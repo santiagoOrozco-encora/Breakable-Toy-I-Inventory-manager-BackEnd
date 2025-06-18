@@ -38,17 +38,6 @@ public class RepositoryImp implements ProductDao{
 
         if(sort != null && sort.length > 0) {
             sortProduct(filteredProducts, sort, order);
-            // for (int i=0; i<sort.length; i++ ) {
-            //     Comparator<Product> comparatorField = getProductComparator(sort[i],order[i]);
-            //     if (comparatorField != null) {
-            //         if(comparator == null){
-            //             comparator = comparatorField;
-            //         }else {
-            //             comparator = comparator.thenComparing(comparatorField);
-            //         }
-            //     }
-            // }
-            // filteredProducts.sort(comparator);
         }
 
         return getPage(filteredProducts, page, size);
@@ -144,13 +133,13 @@ public class RepositoryImp implements ProductDao{
     @Override
     public Integer countProducts(String name, String category, Integer stock) {
         String finalName = (name == null) ? "" : name.toLowerCase();
-        String finalCategory = (category == null) ? "" : category.toLowerCase();
+        String[] finalCategory = (category == null) ? new String[]{} : new String[]{category.toLowerCase()}; 
 
-        List<Product> productList = DB.stream()
-                .filter(product -> (finalName.isEmpty() || product.getName().toLowerCase().contains(finalName)) && (finalCategory.isEmpty() || product.getCategory().toLowerCase().contains(finalCategory)))
-                .filter(product -> (stock == null || stock == 3) || (stock == 1 && product.getStock() >= 1) || (stock == 2 && product.getStock() < 1))
-                .toList();
-        return productList.size();
+        return DB.stream()
+                .filter(product -> matchesName(product, finalName))
+                .filter(product -> matchesCategory(product, finalCategory))
+                .filter(product -> matchesStockCondition(product, stock))
+                .toList().size();
     }
 
     @Override
