@@ -2,11 +2,12 @@ package com.StoreManageBackEnd.StoreManager.presentation.controller;
 
 import com.StoreManageBackEnd.StoreManager.presentation.dto.MetricsDTO;
 import com.StoreManageBackEnd.StoreManager.presentation.dto.NewProductsDTO;
-import com.StoreManageBackEnd.StoreManager.presentation.dto.ProductsDTO;
 import com.StoreManageBackEnd.StoreManager.service.ProductService;
 import com.StoreManageBackEnd.StoreManager.data.model.BatchOperationResult;
+import com.StoreManageBackEnd.StoreManager.data.model.Product;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.support.PagedListHolder;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -100,7 +101,7 @@ public class ProductController {
 
     //Getting the list of products paginated, may be filtered
     @GetMapping
-    public ResponseEntity<PagedListHolder<ProductsDTO>> getProducts(
+    public ResponseEntity<Page<Product>> getProducts(
             @RequestParam(defaultValue = "0")Integer page,
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false,defaultValue = "") String name,
@@ -110,7 +111,7 @@ public class ProductController {
             @RequestParam(required = false,defaultValue = "") boolean[] order
 
     ){
-         PagedListHolder<ProductsDTO> productsPage = this.productService.getProducts(page,size,name,category,stock,sort,order);
+         Page<Product> productsPage = this.productService.getProducts(page,size,name,category,stock,sort,order);
 
          return ResponseEntity.ok(productsPage);
     }

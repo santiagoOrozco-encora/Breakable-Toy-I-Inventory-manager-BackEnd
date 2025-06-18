@@ -5,6 +5,10 @@ import com.StoreManageBackEnd.StoreManager.data.model.Product;
 import com.StoreManageBackEnd.StoreManager.presentation.dto.MetricsDTO;
 import com.StoreManageBackEnd.StoreManager.presentation.dto.NewProductsDTO;
 import lombok.Setter;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -17,32 +21,76 @@ public class RepositoryImp implements ProductDao{
      private static List<Product> DB = new ArrayList<>();
 
     @Override
-    public List<Product> selectAllProducts(Integer page, Integer size, String name, String[] category, Integer stock, String[] sort, boolean[] order) {
+    public Page<Product> selectAllProducts(Integer page, Integer size, String name,
+                                            String[] category, Integer stock,
+                                            String[] sort, boolean[] order) {
         String finalName = (name == null) ? "" : name.toLowerCase();
-        String[] finalCategory = (category == null) ? new String[]{} : Arrays.stream(category).map(String::toLowerCase).toArray(String[]::new);
+        String[] finalCategory = (category == null) ? new String[]{} : 
+            Arrays.stream(category).
+            map(String::toLowerCase).
+            toArray(String[]::new);
 
-        List<Product> productList = new ArrayList<>(DB.stream()
-                .filter(product -> (finalName.isEmpty() || product.getName().toLowerCase().contains(finalName)) && (finalCategory.length == 0 || Arrays.stream(finalCategory).anyMatch(cat -> product.getCategory().toLowerCase().contains(cat))))
-                .filter(product -> (stock == null || stock == 3) || (stock == 1 && product.getStock() >= 1) || (stock == 2 && product.getStock() < 1))
-                .toList());
+        List<Product> filteredProducts = DB.stream()
+            .filter(product -> matchesName(product, finalName))
+            .filter(product -> matchesCategory(product, finalCategory))
+            .filter(product -> matchesStockCondition(product, stock))
+            .collect(Collectors.toList());
 
         if(sort != null && sort.length > 0) {
-            Comparator<Product> comparator = null;
-
-            for (int i=0; i<sort.length; i++ ) {
-                Comparator<Product> comparatorField = getProductComparator(sort[i],order[i]);
-                if (comparatorField != null) {
-                    if(comparator == null){
-                        comparator = comparatorField;
-                    }else {
-                        comparator = comparator.thenComparing(comparatorField);
-                    }
-                }
-            }
-            productList.sort(comparator);
+            sortProduct(filteredProducts, sort, order);
+            // for (int i=0; i<sort.length; i++ ) {
+            //     Comparator<Product> comparatorField = getProductComparator(sort[i],order[i]);
+            //     if (comparatorField != null) {
+            //         if(comparator == null){
+            //             comparator = comparatorField;
+            //         }else {
+            //             comparator = comparator.thenComparing(comparatorField);
+            //         }
+            //     }
+            // }
+            // filteredProducts.sort(comparator);
         }
 
-        return productList;
+        return getPage(filteredProducts, page, size);
+    }
+
+    private Page<Product> getPage(List<Product> products, Integer page, Integer size) {
+        int totalProducts = products.size();
+        int totalPages = (int) Math.ceil((double) totalProducts / size);
+        
+            // Handle page number out of bounds
+    if (page >= totalPages && totalPages > 0) {
+        page = totalPages - 1;
+    }
+    
+    int fromIndex = page * size;
+    int toIndex = Math.min(fromIndex + size, totalProducts);
+    
+    List<Product> pageContent = products.subList(fromIndex, toIndex);
+    
+    return new PageImpl<>(
+        pageContent,
+        PageRequest.of(page, size, Sort.unsorted()),
+        totalProducts
+    );
+    }
+
+    private boolean matchesName(Product product, String name) {
+        return name.isEmpty() || product.getName().toLowerCase().contains(name);
+    }
+    
+    private boolean matchesCategory(Product product, String[] categories) {
+        return categories.length == 0 || 
+               Arrays.stream(categories)
+                     .anyMatch(cat -> product.getCategory().toLowerCase().contains(cat));
+    }
+    
+    private boolean matchesStockCondition(Product product, Integer stock) {
+        if (stock == null || stock == 3) {
+            return true;
+        }
+        return (stock == 1 && product.getStock() >= 1) ||
+               (stock == 2 && product.getStock() < 1);
     }
 
     private static Comparator<Product> getProductComparator(String sort,boolean desc) {
@@ -72,6 +120,27 @@ public class RepositoryImp implements ProductDao{
         return comparatorField;
     }
 
+
+    private static void sortProduct(List<Product> products, 
+                                    String[] sort, 
+                                    boolean[] order) {
+        Comparator<Product> comparator = null;
+
+        for (int i=0; i<sort.length; i++ ) {
+            Comparator<Product> comparatorField = getProductComparator(sort[i],order[i]);
+            if (comparatorField != null) {
+                if(comparator == null){
+                    comparator = comparatorField;
+                }else {
+                    comparator = comparator.thenComparing(comparatorField);
+                }
+            }
+        }
+        if(comparator != null){
+            products.sort(comparator);
+        }
+    }
+    
     @Override
     public Integer countProducts(String name, String category, Integer stock) {
         String finalName = (name == null) ? "" : name.toLowerCase();

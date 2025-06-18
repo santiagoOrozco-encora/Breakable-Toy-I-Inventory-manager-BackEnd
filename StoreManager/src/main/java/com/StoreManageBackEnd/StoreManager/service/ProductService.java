@@ -7,12 +7,10 @@ import com.StoreManageBackEnd.StoreManager.data.model.Product;
 import com.StoreManageBackEnd.StoreManager.data.model.ProductConverter;
 import com.StoreManageBackEnd.StoreManager.presentation.dto.MetricsDTO;
 import com.StoreManageBackEnd.StoreManager.presentation.dto.NewProductsDTO;
-import com.StoreManageBackEnd.StoreManager.presentation.dto.ProductsDTO;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.support.MutableSortDefinition;
-import org.springframework.beans.support.PagedListHolder;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -107,10 +105,10 @@ public class ProductService {
     }
 
     //Get all products service
-    public PagedListHolder<ProductsDTO> getProducts(
+    public Page<Product> getProducts(
         int page, int size,
         String name, String[] category,
-        int stock, String[] sort,
+        Integer stock, String[] sort,
         boolean[] order){
             
             try{
@@ -118,19 +116,19 @@ public class ProductService {
                 throw new IllegalArgumentException("Page and size must be non-negative");
             }
 
-            List<Product> productsList = this.productDao.selectAllProducts(
+            return this.productDao.selectAllProducts(
                 page,size,name,
                 category,stock,
                 sort,order);
             
-            List<ProductsDTO> dtoList = productsList.stream().map(ProductConverter::convertToDTO).toList();
-            MutableSortDefinition sorting =  new MutableSortDefinition("name",false,true);
+            // List<ProductsDTO> dtoList = productsList.stream().map(ProductConverter::convertToDTO).toList();
+            // MutableSortDefinition sorting =  new MutableSortDefinition("name",false,true);
 
-            PagedListHolder<ProductsDTO> productPage = new PagedListHolder<>(dtoList, sorting);
-            productPage.setPageSize(size);
-            productPage.setPage(page);
+            // PagedListHolder<ProductsDTO> productPage = new PagedListHolder<>(dtoList, sorting);
+            // productPage.setPageSize(size);
+            // productPage.setPage(page);
 
-            return  productPage;
+            // return  productPage;
             }catch (Exception e){
                 log.error("Error getting products: {}");
                 throw new RuntimeException("Error getting products: " + e.getMessage());

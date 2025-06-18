@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -48,41 +49,40 @@ public class RepositoryImpTest {
     @Test
     void testSelectAllProductsByName(){
         //Test
-        List<Product> result = repository.selectAllProducts(0,10,"Product01",null,null,null,null);
+        Page<Product> result = repository.selectAllProducts(0,10,"Product01",null,null,null,null);
 
         //Assert
         assertNotNull(result);
-        assertEquals(1,result.size());
-        assertEquals("Product01",result.getFirst().getName());
-        assertEquals("Category01",result.getFirst().getCategory());
+        assertEquals(1,result.getTotalElements());
+        assertEquals("Product01",result.getContent().get(0).getName());
+        assertEquals("Category01",result.getContent().get(0).getCategory());
     }
     @Test
     void testSelectAllProductsByCategory(){
         //Set up
         String[] categories = {"Category02","Category03"};
         //Test
-        List<Product> result = repository.selectAllProducts(0,10,null,categories,null,null,null);
+        Page<Product> result = repository.selectAllProducts(0,10,null,categories,null,null,null);
 
         //Assert
         assertNotNull(result);
-        assertEquals(3,result.size());
-        assertEquals("Product02",result.getFirst().getName());
-        assertEquals(10,result.get(1).getStock());
-
-        assertEquals("Category02",result.getFirst().getCategory());
-        assertEquals("Category02",result.get(1).getCategory());
-        assertEquals("Category03",result.get(2).getCategory());
+        assertEquals(3,result.getTotalElements());
+        List<Product> content = result.getContent();
+        assertEquals(3, content.size());
+        assertEquals("Category02", content.get(0).getCategory());
+        assertEquals("Category02", content.get(1).getCategory());
+        assertEquals("Category03", content.get(2).getCategory());
     }
     @Test
     void testSelectAllProductsByStock(){
         //Test
-        List<Product> result = repository.selectAllProducts(0,10,null,null,2,null,null);
+        Page<Product> result = repository.selectAllProducts(0,10,null,null,2,null,null);
 
         //Assert
         assertNotNull(result);
-        assertEquals(1,result.size());
-        assertEquals("Product02",result.getFirst().getName());
-        assertEquals(0,result.getFirst().getStock());
+        assertEquals(1, result.getTotalElements());
+        assertEquals("Product02", result.getContent().get(0).getName());
+        assertEquals(0, result.getContent().get(0).getStock());
     }
     @Test
     void testSelectAllProductsBySort(){
@@ -90,16 +90,45 @@ public class RepositoryImpTest {
         String[] sort = {"expirationDate"};
         boolean[] order = {false};
         //Test
-        List<Product> result = repository.selectAllProducts(0,10,null,null,null,sort,order);
+        Page<Product> result = repository.selectAllProducts(0,10,null,null,null,sort,order);
 
         //Assert
         assertNotNull(result);
-        assertEquals(5,result.size());
-        assertEquals("Product04",result.getFirst().getName());
-        assertEquals("Product03",result.get(1).getName());
-        assertEquals("Product02",result.get(2).getName());
-        assertEquals("Product05",result.getLast().getName());
+        assertEquals(5, result.getTotalElements());
+        List<Product> content = result.getContent();
+        assertEquals("Product04", content.get(0).getName());
+        assertEquals("Product03", content.get(1).getName());
+        assertEquals("Product02", content.get(2).getName());
+        assertEquals("Product05", content.get(4).getName());
     }
+
+    @Test
+void testPagination() {
+    // First page with 2 items
+    Page<Product> firstPage = repository.selectAllProducts(0, 2, null, null, null, null, null);
+    assertEquals(5, firstPage.getTotalElements());
+    assertEquals(2, firstPage.getContent().size());
+    assertEquals(3, firstPage.getTotalPages());
+    
+    // Second page with 2 items
+    Page<Product> secondPage = repository.selectAllProducts(1, 2, null, null, null, null, null);
+    assertEquals(5, secondPage.getTotalElements());
+    assertEquals(2, secondPage.getContent().size());
+    assertEquals(3, secondPage.getTotalPages());
+    
+    // Third page with 1 item
+    Page<Product> thirdPage = repository.selectAllProducts(2, 2, null, null, null, null, null);
+    assertEquals(5, thirdPage.getTotalElements());
+    assertEquals(1, thirdPage.getContent().size());
+    assertEquals(3, thirdPage.getTotalPages());
+    
+    // Verify page content
+    assertEquals("Product01", firstPage.getContent().get(0).getName());
+    assertEquals("Product02", firstPage.getContent().get(1).getName());
+    assertEquals("Product03", secondPage.getContent().get(0).getName());
+    assertEquals("Product04", secondPage.getContent().get(1).getName());
+    assertEquals("Product05", thirdPage.getContent().get(0).getName());
+}
 
     //Count products test
     @Test

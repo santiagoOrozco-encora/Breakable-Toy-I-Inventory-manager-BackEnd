@@ -5,7 +5,6 @@ import com.StoreManageBackEnd.StoreManager.data.model.Product;
 import com.StoreManageBackEnd.StoreManager.data.model.ProductConverter;
 import com.StoreManageBackEnd.StoreManager.presentation.dto.MetricsDTO;
 import com.StoreManageBackEnd.StoreManager.presentation.dto.NewProductsDTO;
-import com.StoreManageBackEnd.StoreManager.presentation.dto.ProductsDTO;
 import com.StoreManageBackEnd.StoreManager.service.ProductService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,13 +12,17 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.beans.support.PagedListHolder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDate;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 
 public class ProductServiceTest {
@@ -90,67 +93,79 @@ public class ProductServiceTest {
 
     @Test
     void testGetProductsNoFilters() {
-        //Set up
+        // Set up
         Integer page = 0;
         Integer size = 10;
-        String[] categories = {};  // No categories
-        String[] sort = {};  // No sorting
-        boolean[] order = {};  // No order
-
-        when(productDao.selectAllProducts(eq(page), eq(size), eq(null), eq(categories), eq(null), eq(sort), eq(order)))
-                .thenReturn(productsList);
-
-        //Test
-        PagedListHolder<ProductsDTO> result = productService.getProducts(page, size, null, categories, null, sort, order);
-        verify(productDao,times(1)).selectAllProducts(page,size,null,categories,null,sort,order);
-
+        String[] categories = {};
+        String[] sort = {};
+        boolean[] order = {};
+    
+        // Create a page of products
+        Page<Product> productPage = new PageImpl<>(productsList, PageRequest.of(page, size), productsList.size());
+        
+        when(productDao.selectAllProducts(eq(page), eq(size), isNull(), eq(categories), isNull(), eq(sort), eq(order)))
+                .thenReturn(productPage);
+    
+        // Test
+        Page<Product> result = productService.getProducts(page, size, null, categories, null, sort, order);
+        
+        // Verify
+        verify(productDao, times(1)).selectAllProducts(page, size, null, categories, null, sort, order);
+    
+        // Assert
         assertNotNull(result);
-        assertEquals(5, result.getSource().size());
-
-        ProductsDTO returnedProductDTO1 = result.getSource().getFirst();
-        assertEquals("Product Name 1", returnedProductDTO1.getName());
-        assertEquals("Category1", returnedProductDTO1.getCategory());
-        assertEquals(10, returnedProductDTO1.getStock());
-        assertEquals(110.50F,returnedProductDTO1.getUnitPrice());
-
-
-        ProductsDTO returnedProductDTO2 = result.getSource().get(1);
-        assertEquals("Product Name 2", returnedProductDTO2.getName());
-        assertEquals("Category2", returnedProductDTO2.getCategory());
-        assertEquals(15, returnedProductDTO2.getStock());
-        assertEquals(115.5F,returnedProductDTO2.getUnitPrice());
+        assertEquals(5, result.getTotalElements());
+        assertEquals(1, result.getTotalPages());
+        
+        List<Product> content = result.getContent();
+        assertEquals(5, content.size());
+        assertEquals("Product Name 1", content.get(0).getName());
+        assertEquals("Category1", content.get(0).getCategory());
+        assertEquals(10, content.get(0).getStock());
+        assertEquals(110.50F, content.get(0).getUnitPrice());
     }
-
     @Test
-    void testGetProductsAllFilters(){
-        //Set up
+    void testGetProductsAllFilters() {
+        // Set up
         Integer page = 0;
         Integer size = 10;
-        String[] categories = {"Category2"};  // No categories
-        String[] sort = {};  // No sorting
-        boolean[] order = {true};  // No order
-
+        String[] categories = {"Category2"};
+        String[] sort = {};
+        boolean[] order = {true};
+        
+        // Create a filtered list of products
+        List<Product> filteredProducts = List.of(product2, product4);
+        Page<Product> productPage = new PageImpl<>(filteredProducts, PageRequest.of(page, size), filteredProducts.size());
+    
         when(productDao.selectAllProducts(eq(page), eq(size), eq("Product"), eq(categories), eq(1), eq(sort), eq(order)))
-                .thenReturn(List.of(product2,product4));
-
-        //Test
-        PagedListHolder<ProductsDTO> result = productService.getProducts(page, size, "Product", categories, 1, sort, order);
-        verify(productDao,times(1)).selectAllProducts(page,size,"Product",categories,1,sort,order);
-
+                .thenReturn(productPage);
+    
+        // Test
+        Page<Product> result = productService.getProducts(page, size, "Product", categories, 1, sort, order);
+        
+        // Verify
+        verify(productDao, times(1)).selectAllProducts(page, size, "Product", categories, 1, sort, order);
+    
+        // Assert
         assertNotNull(result);
-        assertEquals(2, result.getSource().size());
-
-        ProductsDTO returnedProductDTO1 = result.getSource().getFirst();
-        assertEquals("Product Name 2", returnedProductDTO1.getName());
-        assertEquals("Category2", returnedProductDTO1.getCategory());
-        assertEquals(15, returnedProductDTO1.getStock());
-        assertEquals(115.5F,returnedProductDTO1.getUnitPrice());
-
-        ProductsDTO returnedProductDTO2 = result.getSource().get(1);
-        assertEquals("Product Name 4", returnedProductDTO2.getName());
-        assertEquals("Category2", returnedProductDTO2.getCategory());
-        assertEquals(15, returnedProductDTO2.getStock());
-        assertEquals(115.5F,returnedProductDTO2.getUnitPrice());
+        assertEquals(2, result.getTotalElements());
+        
+        List<Product> content = result.getContent();
+        assertEquals(2, content.size());
+        
+        // Verify first product
+        Product firstProduct = content.get(0);
+        assertEquals("Product Name 2", firstProduct.getName());
+        assertEquals("Category2", firstProduct.getCategory());
+        assertEquals(15, firstProduct.getStock());
+        assertEquals(115.5F, firstProduct.getUnitPrice());
+    
+        // Verify second product
+        Product secondProduct = content.get(1);
+        assertEquals("Product Name 4", secondProduct.getName());
+        assertEquals("Category2", secondProduct.getCategory());
+        assertEquals(15, secondProduct.getStock());
+        assertEquals(115.5F, secondProduct.getUnitPrice());
     }
 
     @Test
